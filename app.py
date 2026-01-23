@@ -18,11 +18,17 @@ except:
 def main(page: ft.Page):
     page.title = "Agente 2026"
     page.theme_mode = ft.ThemeMode.DARK
+    page.scroll = "adaptive"
     
-    campo = ft.TextField(label="¿En qué te ayudo?", expand=True)
+    campo = ft.TextField(label="¿En qué te ayudo?", expand=True, multiline=True)
     texto_log = ft.Text("")
+    progreso = ft.ProgressBar(visible=False)
 
     def accion_ia(e):
+        if not campo.value: return
+        progreso.visible = True
+        texto_log.value = "🔍 Investigando..."
+        page.update()
         try:
             busqueda = tavily.search(query=campo.value)
             contexto = "\n".join([r['content'] for r in busqueda['results']])
@@ -31,15 +37,17 @@ def main(page: ft.Page):
                 messages=[{"role": "user", "content": f"{contexto}\n\nPregunta: {campo.value}"}]
             )
             campo.value = res.choices[0].message.content
-            page.update()
+            texto_log.value = "✅ Análisis completado"
         except Exception as err:
             texto_log.value = f"Error: {err}"
-            page.update()
+        progreso.visible = False
+        page.update()
 
     page.add(
-        ft.Text("🤖 SISTEMA IA 2026", size=25, weight="bold"),
+        ft.Text("🤖 SISTEMA IA 2026", size=25, weight="bold", color="blue"),
         campo,
-        ft.ElevatedButton("INVESTIGAR", on_click=accion_ia),
+        progreso,
+        ft.ElevatedButton("INVESTIGAR", icon=ft.Icons.SEARCH, on_click=accion_ia),
         texto_log
     )
 
