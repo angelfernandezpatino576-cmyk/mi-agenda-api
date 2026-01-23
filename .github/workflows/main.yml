@@ -1,31 +1,22 @@
-name: Generar Mi APK
+name: BuildAPK
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
 
 jobs:
-  build:
+  apk:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout del codigo
-        uses: actions/checkout@v4
-
-      - name: Configurar Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
-      - name: Instalar dependencias
-        run: |
-          pip install flet requests
-
-      - name: Compilar APK
-        run: |
-          flet build apk --filename MiAgenda2026.apk
-
-      - name: Subir Resultado
-        uses: actions/upload-artifact@v4
+      - name: Install
+        run: pip install flet requests
+      - name: Build
+        run: flet build apk
+      - uses: actions/upload-artifact@v4
         with:
-          name: MiAppInstalable
+          name: AppInstalable
           path: build/apk/*.apk
