@@ -1,24 +1,54 @@
-name: BuildAPK
+name: Build and Release APK
+
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: write  # Permiso crucial para crear el link de descarga
+
 jobs:
-  apk:
+  build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install dependencies
-        run: pip install flet requests
-      - name: Build APK
+
+      - name: Instalar Flet y dependencias de empaquetado
         run: |
-          # El comando 'yes' le dice que SI a todas las preguntas de instalacion
-          yes | flet build apk
-      - uses: actions/upload-artifact@v4
+          python -m pip install --upgrade pip
+          pip install flet
+
+      - name: Crear APK (Flet Build)
+        run: |
+          # Empaquetamos el archivo app.py
+          flet build apk --main app.py
+
+      - name: Preparar archivo para descarga
+        run: |
+          # Buscamos la APK generada y la renombramos/comprimimos
+          mv build/apk/*.apk AgenteIA_2026.apk
+          zip -r AppInstalable.zip AgenteIA_2026.apk
+
+      - name: Subir Artefacto (Copia de seguridad)
+        uses: actions/upload-artifact@v4
         with:
           name: AppInstalable
-          path: build/apk/*.apk
+          path: AppInstalable.zip
+
+      - name: Publicar Release Permanente
+        uses: softprops/action-gh-release@v1
+        with:
+          files: AppInstalable.zip
+          tag_name: v1.0.${{ github.run_number }}
+          name: "Actualización Agente IA #${{ github.run_number }}"
+          body: "Esta es la última versión de tu Agente IA. Descarga el .zip, extrae la APK e instálala."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
