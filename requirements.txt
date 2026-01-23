@@ -1,6 +1,4 @@
 flet
 requests
-fastapi
-uvicorn
 groq
 tavily-python
