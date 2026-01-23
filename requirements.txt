@@ -1,6 +1,4 @@
-fastapi
-uvicorn
-
-pydantic
 flet
 requests
+fastapi
+uvicorn
