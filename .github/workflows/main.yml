@@ -12,10 +12,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install
+      - name: Install dependencies
         run: pip install flet requests
-      - name: Build
-        run: flet build apk
+      - name: Build APK
+        run: |
+          # El comando 'yes' le dice que SI a todas las preguntas de instalacion
+          yes | flet build apk
       - uses: actions/upload-artifact@v4
         with:
           name: AppInstalable
