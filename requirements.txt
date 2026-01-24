@@ -5,5 +5,5 @@ uvicorn
 groq
 tavily-python
 speechrecognition
-pyaudio
+sounddevice
 opencv-python
