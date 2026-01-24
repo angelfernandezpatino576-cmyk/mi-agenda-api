@@ -35,7 +35,7 @@ jobs:
 
       - name: Crear APK
         run: |
-          # Usamos --no-docker para evitar conflictos de permisos
+          # Importante: flet build usa app.py para la APK
           flet build apk app.py
 
       - name: Subir APK terminada
