@@ -1,4 +1,4 @@
-name: Build APK Clean Install
+name: Build APK Force Install
 
 on:
   push:
@@ -28,25 +28,24 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Limpieza y Descarga de Dependencias
+      - name: Instalación de Emergencia
         run: |
-          # 1. Eliminar cualquier residuo de pip
+          # 1. Forzar actualización de pip
           python -m pip install --upgrade pip
-          pip cache purge
           
-          # 2. Instalar herramientas base para que Flet no falle
-          pip install --upgrade setuptools wheel
+          # 2. Instalar Flet y dependencias con reintento y log detallado
+          pip install --no-cache-dir --force-reinstall flet groq tavily-python
           
-          # 3. Instalar Flet y librerías de IA ignorando instalaciones previas
-          pip install --upgrade --force-reinstall flet groq tavily-python
+          # 3. VERIFICACIÓN: Si esto falla, el log nos dirá por qué
+          python -m flet --version
 
-      - name: Crear APK desde Cero
+      - name: Crear APK
         run: |
-          # Aceptamos licencias y construimos
+          # Usamos 'yes' para saltar cualquier confirmación de Flutter
           yes | flet build apk app.py --org com.miagenda.agente --project agente2026
           
-      - name: Entregar APK Limpia
+      - name: Subir APK Final
         uses: actions/upload-artifact@v4
         with:
-          name: AppAgenteIA_Final
+          name: AppAgenteIA
           path: build/apk/*.apk
