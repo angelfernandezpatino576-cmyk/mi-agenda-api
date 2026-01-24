@@ -1,4 +1,4 @@
-name: Build APK Force Install
+name: Build APK Final Fix
 
 on:
   push:
@@ -28,21 +28,18 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Instalación de Emergencia
+      - name: Instalación y Configuración de Flet
         run: |
-          # 1. Forzar actualización de pip
           python -m pip install --upgrade pip
-          
-          # 2. Instalar Flet y dependencias con reintento y log detallado
-          pip install --no-cache-dir --force-reinstall flet groq tavily-python
-          
-          # 3. VERIFICACIÓN: Si esto falla, el log nos dirá por qué
-          python -m flet --version
+          # Instalamos flet y nos aseguramos de que sus comandos sean visibles
+          pip install flet groq tavily-python
+          # Añadimos la ruta de los scripts de Python al sistema
+          echo "PATH=$PATH:$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Crear APK
+      - name: Crear APK (Usando ejecución directa)
         run: |
-          # Usamos 'yes' para saltar cualquier confirmación de Flutter
-          yes | flet build apk app.py --org com.miagenda.agente --project agente2026
+          # Usamos 'python -m flet' en lugar de solo 'flet' para evitar el error de comando no encontrado
+          yes | python -m flet build apk app.py --org com.miagenda.agente --project agente2026 --verbose
           
       - name: Subir APK Final
         uses: actions/upload-artifact@v4
