@@ -1,15 +1,45 @@
-name: Build APK
-on: [push]
+name: Build APK Priority
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with: {distribution: 'temurin', java-version: '17'}
-      - uses: subosito/flutter-action@v2
-        with: {flutter-version: '3.16.0'}
-      - run: pip install flet
-      - run: flet build apk app.py
-      - uses: actions/upload-artifact@v4
-        with: {name: AppAgente, path: build/apk/*.apk}
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Instalar Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.16.0'
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar Flet
+        run: |
+          python -m pip install --upgrade pip
+          pip install flet
+
+      - name: Crear APK (Forzando instalación)
+        run: |
+          # El comando --yes evita que el proceso se quede trabado preguntando
+          flet build apk app.py --yes
+
+      - name: Subir APK Final
+        uses: actions/upload-artifact@v4
+        with:
+          name: AppAgenteIA
+          path: build/apk/*.apk
