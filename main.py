@@ -5,12 +5,11 @@ app = FastAPI()
 
 @app.get("/")
 def home():
-    return {"status": "Agente IA 2026 Online", "servidor": "Koyeb"}
+    return {"status": "Servidor Agente 2026 Online"}
 
 @app.get("/tareas/")
 def leer_tareas():
-    # Esto es para que la URL que usa tu APK no de error 404
-    return [{"id": 1, "titulo": "Servidor activo", "estado": "ok"}]
+    return [{"id": 1, "titulo": "Conexión exitosa con Koyeb", "estado": "ok"}]
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
