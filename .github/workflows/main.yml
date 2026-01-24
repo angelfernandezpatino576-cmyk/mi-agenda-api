@@ -31,6 +31,11 @@ jobs:
       - name: Crear APK
         run: flet build apk --module-name=app
 
+      - name: Mover APK generado a dist/
+        run: |
+          mkdir -p dist
+          find . -name "*.apk" -exec cp {} dist/ \;
+
       - name: Subir APK como artefacto
         uses: actions/upload-artifact@v4
         with:
