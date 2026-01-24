@@ -1,87 +1,62 @@
 import flet as ft
-from groq import Groq
-from tavily import TavilyClient
-
-# --- CONFIGURACIÓN DE LLAVES ---
-LLAVE_GROQ = "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"
-LLAVE_TAVILY = "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"
+from core.ia import investigar
+from core.microfono import escuchar
+from core.camara import capturar
+from core.calendario import mostrar_calendario
 
 def main(page: ft.Page):
-    page.title = "Agente IA 2026"
+    page.title = "SISTEMA IA 2026"
     page.theme_mode = ft.ThemeMode.DARK
-    page.scroll = ft.ScrollMode.ADAPTIVE
+    page.scroll = ft.ScrollMode.AUTO
     page.padding = 20
 
-    titulo = ft.Text("🤖 SISTEMA IA 2026", size=28, weight="bold", color="blue")
-    subtitulo = ft.Text("Investigación en tiempo real", size=16, color="grey")
+    campo = ft.TextField(label="¿Qué deseas investigar?", expand=True)
+    resultado = ft.Text("", selectable=True)
+    progreso = ft.ProgressBar(visible=False)
 
-    campo_busqueda = ft.TextField(
-        label="¿Qué deseas investigar?",
-        hint_text="Ej: ¿Cómo estará el clima en 2026?",
-        expand=True,
-        multiline=True,
-        min_lines=1,
-        max_lines=3
-    )
-
-    texto_resultado = ft.Text("", selectable=True)
-    progreso = ft.ProgressBar(visible=False, color="blue")
-
-    def ejecutar_ia(e):
-        if not campo_busqueda.value:
-            texto_resultado.value = "⚠️ Por favor ingresa una pregunta."
+    def ejecutar(e):
+        if not campo.value:
+            resultado.value = "⚠️ Ingresa una pregunta."
+        else:
+            progreso.visible = True
+            resultado.value = "🔍 Procesando..."
             page.update()
-            return
-
-        progreso.visible = True
-        texto_resultado.value = "🔍 Consultando fuentes web y procesando..."
+            try:
+                resultado.value = investigar(campo.value)
+            except Exception as err:
+                resultado.value = f"❌ Error: {err}"
+            progreso.visible = False
         page.update()
 
+    def usar_microfono(e):
         try:
-            client_groq = Groq(api_key=LLAVE_GROQ)
-            tavily = TavilyClient(api_key=LLAVE_TAVILY)
+            campo.value = escuchar()
+            page.update()
+        except Exception as err:
+            resultado.value = f"🎙️ Error de micrófono: {err}"
+            page.update()
 
-            busqueda = tavily.search(query=campo_busqueda.value)
-            resultados = busqueda.get("results", [])
+    def usar_camara(e):
+        try:
+            capturar()
+            resultado.value = "📷 Imagen capturada como captura.jpg"
+            page.update()
+        except Exception as err:
+            resultado.value = f"📷 Error de cámara: {err}"
+            page.update()
 
-            if not resultados:
-                texto_resultado.value = "⚠️ No se encontraron resultados relevantes."
-            else:
-                contexto = "\n".join([r.get("content", "") for r in resultados])
-
-                respuesta_ia = client_groq.chat.completions.create(
-                    model="llama-3.3-70b-versatile",
-                    messages=[
-                        {"role": "system", "content": "Eres un asistente de investigación avanzado. Usa el contexto proporcionado para responder de forma precisa."},
-                        {"role": "user", "content": f"Contexto: {contexto}\n\nPregunta: {campo_busqueda.value}"}
-                    ]
-                )
-
-                texto_resultado.value = respuesta_ia.choices[0].message.content
-
-        except Exception as error:
-            texto_resultado.value = f"❌ Error del sistema: {str(error)}"
-
-        progreso.visible = False
-        page.update()
-
-    btn_buscar = ft.ElevatedButton(
-        "INICIAR INVESTIGACIÓN",
-        icon=ft.Icons.SEARCH,
-        on_click=ejecutar_ia,
-        style=ft.ButtonStyle(padding=20)
-    )
+    boton_buscar = ft.ElevatedButton("INICIAR INVESTIGACIÓN", icon=ft.icons.SEARCH, on_click=ejecutar)
+    boton_microfono = ft.IconButton(icon=ft.icons.MIC, tooltip="Usar voz", on_click=usar_microfono)
+    boton_camara = ft.IconButton(icon=ft.icons.CAMERA_ALT, tooltip="Capturar imagen", on_click=usar_camara)
+    boton_calendario = mostrar_calendario(page)
 
     page.add(
-        titulo,
-        subtitulo,
-        ft.Divider(height=20, color="transparent"),
-        campo_busqueda,
+        ft.Row([campo, boton_microfono]),
+        boton_buscar,
         progreso,
-        btn_buscar,
-        ft.Divider(height=20),
-        texto_resultado
+        resultado,
+        ft.Divider(),
+        ft.Row([boton_camara, boton_calendario])
     )
 
-if __name__ == "__main__":
-    ft.app(target=main)
+ft.app(target=main)
