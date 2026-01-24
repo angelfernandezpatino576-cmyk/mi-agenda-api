@@ -1,45 +1,15 @@
-name: Build APK Priority
-
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
-
+name: Build APK
+on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout del código
-        uses: actions/checkout@v4
-
-      - name: Configurar Java 17 (Requerido para Android)
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Instalar Flutter SDK (Evita el error de tus fotos)
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.16.0'
-
-      - name: Configurar Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Instalar Flet
-        run: |
-          python -m pip install --upgrade pip
-          pip install flet
-
-      - name: Crear APK (Sin preguntas interactivas)
-        run: |
-          # Usamos app.py como base. Borramos el --main para evitar el otro error.
-          flet build apk app.py
-
-      - name: Entregar archivo APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: AppAgenteIA
-          path: build/apk/*.apk
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: 'temurin', java-version: '17'}
+      - uses: subosito/flutter-action@v2
+        with: {flutter-version: '3.16.0'}
+      - run: pip install flet
+      - run: flet build apk app.py
+      - uses: actions/upload-artifact@v4
+        with: {name: AppAgente, path: build/apk/*.apk}
