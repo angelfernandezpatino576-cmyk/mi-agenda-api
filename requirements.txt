@@ -4,3 +4,6 @@ fastapi
 uvicorn
 groq
 tavily-python
+speechrecognition
+pyaudio
+opencv-python
