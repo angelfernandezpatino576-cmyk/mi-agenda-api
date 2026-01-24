@@ -1,4 +1,4 @@
-name: Build APK
+name: Build APK Priority
 
 on:
   push:
@@ -12,13 +12,13 @@ jobs:
       - name: Checkout del código
         uses: actions/checkout@v4
 
-      - name: Configurar Java
+      - name: Configurar Java 17 (Requerido para Android)
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Configurar Flutter
+      - name: Instalar Flutter SDK (Evita el error de tus fotos)
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.16.0'
@@ -33,13 +33,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install flet
 
-      - name: Crear APK
+      - name: Crear APK (Sin preguntas interactivas)
         run: |
-          # Importante: flet build usa app.py para la APK
+          # Usamos app.py como base. Borramos el --main para evitar el otro error.
           flet build apk app.py
 
-      - name: Subir APK terminada
+      - name: Entregar archivo APK
         uses: actions/upload-artifact@v4
         with:
-          name: AppInstalable
+          name: AppAgenteIA
           path: build/apk/*.apk
