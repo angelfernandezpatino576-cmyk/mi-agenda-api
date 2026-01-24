@@ -30,3 +30,9 @@ jobs:
 
       - name: Crear APK
         run: flet build apk --module-name=app
+
+      - name: Subir APK como artefacto
+        uses: actions/upload-artifact@v3
+        with:
+          name: agente-2026-apk
+          path: dist/*.apk
