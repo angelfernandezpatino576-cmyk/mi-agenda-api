@@ -29,6 +29,8 @@ def main(page: ft.Page):
 
     def ejecutar_ia(e):
         if not campo_busqueda.value:
+            texto_resultado.value = "⚠️ Por favor ingresa una pregunta."
+            page.update()
             return
 
         progreso.visible = True
@@ -40,17 +42,22 @@ def main(page: ft.Page):
             tavily = TavilyClient(api_key=LLAVE_TAVILY)
 
             busqueda = tavily.search(query=campo_busqueda.value)
-            contexto = "\n".join([r["content"] for r in busqueda["results"]])
+            resultados = busqueda.get("results", [])
 
-            respuesta_ia = client_groq.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[
-                    {"role": "system", "content": "Eres un asistente de investigación avanzado. Usa el contexto proporcionado para responder de forma precisa."},
-                    {"role": "user", "content": f"Contexto: {contexto}\n\nPregunta: {campo_busqueda.value}"}
-                ]
-            )
+            if not resultados:
+                texto_resultado.value = "⚠️ No se encontraron resultados relevantes."
+            else:
+                contexto = "\n".join([r.get("content", "") for r in resultados])
 
-            texto_resultado.value = respuesta_ia.choices[0].message.content
+                respuesta_ia = client_groq.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=[
+                        {"role": "system", "content": "Eres un asistente de investigación avanzado. Usa el contexto proporcionado para responder de forma precisa."},
+                        {"role": "user", "content": f"Contexto: {contexto}\n\nPregunta: {campo_busqueda.value}"}
+                    ]
+                )
+
+                texto_resultado.value = respuesta_ia.choices[0].message.content
 
         except Exception as error:
             texto_resultado.value = f"❌ Error del sistema: {str(error)}"
