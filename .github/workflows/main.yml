@@ -28,18 +28,16 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Instalación y Configuración de Flet
+      - name: Instalación de Flet y Dependencias
         run: |
           python -m pip install --upgrade pip
-          # Instalamos flet y nos aseguramos de que sus comandos sean visibles
           pip install flet groq tavily-python
-          # Añadimos la ruta de los scripts de Python al sistema
-          echo "PATH=$PATH:$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Crear APK (Usando ejecución directa)
+      - name: Crear APK (Comando Oficial)
         run: |
-          # Usamos 'python -m flet' en lugar de solo 'flet' para evitar el error de comando no encontrado
-          yes | python -m flet build apk app.py --org com.miagenda.agente --project agente2026 --verbose
+          # Usamos directamente 'flet build'
+          # El comando 'yes' responde a la pregunta del SDK de Flutter automáticamente
+          yes | flet build apk app.py --org com.miagenda.agente --project agente2026
           
       - name: Subir APK Final
         uses: actions/upload-artifact@v4
