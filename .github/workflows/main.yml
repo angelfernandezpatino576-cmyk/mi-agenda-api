@@ -1,4 +1,4 @@
-name: Build APK Priority
+name: Build APK Clean Install
 
 on:
   push:
@@ -28,20 +28,25 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Instalar Flet y herramientas de empaquetado
+      - name: Limpieza y Descarga de Dependencias
         run: |
-          # Actualizamos herramientas base antes de instalar Flet
-          python -m pip install --upgrade pip setuptools wheel
-          pip install --upgrade flet groq tavily-python
+          # 1. Eliminar cualquier residuo de pip
+          python -m pip install --upgrade pip
+          pip cache purge
+          
+          # 2. Instalar herramientas base para que Flet no falle
+          pip install --upgrade setuptools wheel
+          
+          # 3. Instalar Flet y librerías de IA ignorando instalaciones previas
+          pip install --upgrade --force-reinstall flet groq tavily-python
 
-      - name: Crear APK
+      - name: Crear APK desde Cero
         run: |
-          # El comando 'yes |' acepta licencias automáticamente
-          # Usamos app.py como base
+          # Aceptamos licencias y construimos
           yes | flet build apk app.py --org com.miagenda.agente --project agente2026
           
-      - name: Subir APK Final
+      - name: Entregar APK Limpia
         uses: actions/upload-artifact@v4
         with:
-          name: AppAgenteIA
+          name: AppAgenteIA_Final
           path: build/apk/*.apk
