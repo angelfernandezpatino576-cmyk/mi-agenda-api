@@ -33,11 +33,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install flet
 
-      - name: Crear APK (Forzando instalación)
+      - name: Crear APK (Modo Forzado)
         run: |
-          # El comando --yes evita que el proceso se quede trabado preguntando
-          flet build apk app.py --yes
-
+          # Usamos 'flet build apk' sin argumentos extraños
+          # El --verbose nos dirá exactamente qué falla si se detiene
+          flet build apk app.py --verbose
+          
       - name: Subir APK Final
         uses: actions/upload-artifact@v4
         with:
