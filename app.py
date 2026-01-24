@@ -3,52 +3,45 @@ from groq import Groq
 from tavily import TavilyClient
 
 # --- CONFIGURACIÓN DE LLAVES ---
-# Estas llaves permitirán que tu App busque en internet y razone con Llama 3.3
-LLAVE_GROQ = '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'
-LLAVE_TAVILY = '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'
+LLAVE_GROQ = "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"
+LLAVE_TAVILY = "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"
 
 def main(page: ft.Page):
-    # Configuración de la interfaz
     page.title = "Agente IA 2026"
     page.theme_mode = ft.ThemeMode.DARK
     page.scroll = ft.ScrollMode.ADAPTIVE
     page.padding = 20
-    
-    # Elementos visuales
+
     titulo = ft.Text("🤖 SISTEMA IA 2026", size=28, weight="bold", color="blue")
     subtitulo = ft.Text("Investigación en tiempo real", size=16, color="grey")
-    
+
     campo_busqueda = ft.TextField(
-        label="¿Qué deseas investigar?", 
+        label="¿Qué deseas investigar?",
         hint_text="Ej: ¿Cómo estará el clima en 2026?",
-        expand=True, 
+        expand=True,
         multiline=True,
         min_lines=1,
         max_lines=3
     )
-    
+
     texto_resultado = ft.Text("", selectable=True)
     progreso = ft.ProgressBar(visible=False, color="blue")
 
     def ejecutar_ia(e):
         if not campo_busqueda.value:
             return
-            
-        # UI en modo carga
+
         progreso.visible = True
         texto_resultado.value = "🔍 Consultando fuentes web y procesando..."
         page.update()
-        
+
         try:
-            # 1. Inicializar Clientes
             client_groq = Groq(api_key=LLAVE_GROQ)
             tavily = TavilyClient(api_key=LLAVE_TAVILY)
-            
-            # 2. Búsqueda en la web (Tavily)
+
             busqueda = tavily.search(query=campo_busqueda.value)
-            contexto = "\n".join([r['content'] for r in busqueda['results']])
-            
-            # 3. Generar respuesta con IA (Groq - Llama 3.3)
+            contexto = "\n".join([r["content"] for r in busqueda["results"]])
+
             respuesta_ia = client_groq.chat.completions.create(
                 model="llama-3.3-70b-versatile",
                 messages=[
@@ -56,25 +49,22 @@ def main(page: ft.Page):
                     {"role": "user", "content": f"Contexto: {contexto}\n\nPregunta: {campo_busqueda.value}"}
                 ]
             )
-            
-            # Mostrar resultado final
+
             texto_resultado.value = respuesta_ia.choices[0].message.content
-            
+
         except Exception as error:
             texto_resultado.value = f"❌ Error del sistema: {str(error)}"
-        
+
         progreso.visible = False
         page.update()
 
-    # Botón de acción
     btn_buscar = ft.ElevatedButton(
-        "INICIAR INVESTIGACIÓN", 
-        icon=ft.Icons.SEARCH, 
+        "INICIAR INVESTIGACIÓN",
+        icon=ft.Icons.SEARCH,
         on_click=ejecutar_ia,
         style=ft.ButtonStyle(padding=20)
     )
 
-    # Construcción de la pantalla
     page.add(
         titulo,
         subtitulo,
@@ -86,6 +76,5 @@ def main(page: ft.Page):
         texto_resultado
     )
 
-# Punto de entrada para Flet (Vital para Android)
 if __name__ == "__main__":
     ft.app(target=main)
