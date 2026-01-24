@@ -1,11 +1,7 @@
-from fastapi import FastAPI
-import uvicorn
+import flet as ft
 
-app = FastAPI()
+def main(page: ft.Page):
+    page.title = "Agente 2026"
+    page.add(ft.Text("Servidor Agente 2026 Online"))
 
-@app.get("/")
-def home():
-    return {"status": "Servidor Agente 2026 Online"}
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+ft.app(target=main)
