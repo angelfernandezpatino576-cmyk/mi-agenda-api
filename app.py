@@ -1,61 +1,62 @@
 import flet as ft
-from core.ia import investigar
-from core.microfono import escuchar
-from core.camara import capturar
-from core.calendario import mostrar_calendario
+import pyttsx3
+
+# Simulación: variable que indica si el asistente se inició fuera del APK
+# En producción, esto se puede detectar con flags o configuración del sistema
+INICIADO_FUERA_APK = True  
+
+def hablar(texto):
+    if INICIADO_FUERA_APK:  # Solo activa voz si está fuera del APK
+        engine = pyttsx3.init()
+        engine.setProperty("rate", 150)
+        engine.setProperty("volume", 0.9)
+        engine.say(texto)
+        engine.runAndWait()
 
 def main(page: ft.Page):
-    page.title = "SISTEMA IA 2026"
+    page.title = "Asistente Inteligente"
     page.theme_mode = ft.ThemeMode.DARK
-    page.scroll = ft.ScrollMode.AUTO
-    page.padding = 20
 
-    campo = ft.TextField(label="¿Qué deseas investigar?", expand=True)
+    # Paleta premium
+    page.theme = ft.Theme(
+        color_scheme=ft.ColorScheme(
+            primary="#10B981",       # Verde esmeralda
+            secondary="#374151",     # Gris oscuro
+            background="#1A1A1A",    # Negro suave
+            surface="#1A1A1A",
+            on_primary="#FFFFFF",
+            on_secondary="#FFFFFF",
+            on_background="#FFFFFF",
+            on_surface="#FFFFFF",
+        )
+    )
+
+    titulo = ft.Text("🤖 SISTEMA IA 2026", size=22, weight="bold", color="#FBBF24")
+    campo = ft.TextField(label="Haz tu pregunta...", expand=True)
     resultado = ft.Text("", selectable=True)
-    progreso = ft.ProgressBar(visible=False)
 
     def ejecutar(e):
-        if not campo.value:
-            resultado.value = "⚠️ Ingresa una pregunta."
+        if campo.value.startswith("/investigar "):
+            pregunta = campo.value.replace("/investigar ", "")
+            respuesta = f"📚 Resultado de investigación sobre: {pregunta}"
+            resultado.value = respuesta
+            hablar(respuesta)
         else:
-            progreso.visible = True
-            resultado.value = "🔍 Procesando..."
-            page.update()
-            try:
-                resultado.value = investigar(campo.value)
-            except Exception as err:
-                resultado.value = f"❌ Error: {err}"
-            progreso.visible = False
+            resultado.value = "❗ Usa el comando /investigar seguido de tu pregunta."
         page.update()
 
-    def usar_microfono(e):
-        try:
-            campo.value = escuchar()
-            page.update()
-        except Exception as err:
-            resultado.value = f"🎙️ Error de micrófono: {err}"
-            page.update()
-
-    def usar_camara(e):
-        try:
-            capturar()
-            resultado.value = "📷 Imagen capturada como captura.jpg"
-            page.update()
-        except Exception as err:
-            resultado.value = f"📷 Error de cámara: {err}"
-            page.update()
-
     boton_buscar = ft.ElevatedButton("INICIAR INVESTIGACIÓN", icon=ft.icons.SEARCH, on_click=ejecutar)
-    boton_microfono = ft.IconButton(icon=ft.icons.MIC, tooltip="Usar voz", on_click=usar_microfono)
-    boton_camara = ft.IconButton(icon=ft.icons.CAMERA_ALT, tooltip="Capturar imagen", on_click=usar_camara)
-    boton_calendario = mostrar_calendario(page)
+    boton_microfono = ft.IconButton(icon=ft.icons.MIC, tooltip="Usar voz", icon_color="#FBBF24")
+    boton_camara = ft.IconButton(icon=ft.icons.CAMERA_ALT, tooltip="Capturar imagen", icon_color="#FBBF24")
+    boton_calendario = ft.IconButton(icon=ft.icons.CALENDAR_MONTH, tooltip="Calendario", icon_color="#FBBF24")
+    boton_tema = ft.IconButton(icon=ft.icons.BRIGHTNESS_6, tooltip="Cambiar tema", icon_color="#FBBF24")
 
     page.add(
+        ft.Row([titulo, boton_tema], alignment="spaceBetween"),
         ft.Row([campo, boton_microfono]),
         boton_buscar,
-        progreso,
         resultado,
-        ft.Divider(),
+        ft.Divider(color="#374151"),
         ft.Row([boton_camara, boton_calendario])
     )
 
