@@ -22,6 +22,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.16.0'
+          channel: 'stable'
 
       - name: Configurar Python
         uses: actions/setup-python@v5
@@ -33,11 +34,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install flet
 
-      - name: Crear APK (Modo Forzado)
+      - name: Crear APK (Comando Blindado)
         run: |
-          # Usamos 'flet build apk' sin argumentos extraños
-          # El --verbose nos dirá exactamente qué falla si se detiene
-          flet build apk app.py --verbose
+          # Obligamos a Flet a ver el Flutter que acabamos de instalar
+          # Y usamos un pipe para decirle "y" (yes) automáticamente a cualquier pregunta
+          yes | flet build apk app.py --org com.miagenda.agente --project agente2026
           
       - name: Subir APK Final
         uses: actions/upload-artifact@v4
