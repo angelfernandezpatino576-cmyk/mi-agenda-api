@@ -6,5 +6,5 @@ groq
 tavily-python
 gtts
 simpleaudio
-speechrecognition-lite
+SpeechRecognition
 Pillow
