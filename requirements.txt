@@ -4,8 +4,7 @@ requests
 flet
 groq
 tavily-python
-speechrecognition
-sounddevice
 gtts
-numpy==1.26.4
+simpleaudio
+speechrecognition-lite
 Pillow
