@@ -1,9 +1,11 @@
-flet
-requests
 fastapi
 uvicorn
+requests
+flet
 groq
 tavily-python
 speechrecognition
 sounddevice
-opencv-python
+gtts
+numpy==1.26.4
+opencv-python-headless
