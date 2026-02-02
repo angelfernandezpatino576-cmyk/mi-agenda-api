@@ -1,10 +1,5 @@
-fastapi
-uvicorn
-requests
 flet
+requests
 groq
 tavily-python
-gtts
-simpleaudio
-SpeechRecognition
 Pillow
