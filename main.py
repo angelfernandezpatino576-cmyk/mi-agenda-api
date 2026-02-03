@@ -2,99 +2,82 @@ import flet as ft
 import os
 import asyncio
 
-# --- OPTIMIZACIÓN: DETECCIÓN DE ENTORNO ---
-# Detectamos si estamos ejecutando dentro de Termux para el audio
+# --- CONFIGURACIÓN DE ENTORNO ---
 IS_TERMUX = "com.termux" in os.environ.get("PREFIX", "")
 
 async def hablar_async(texto):
-    """Función de voz optimizada para Android/Termux"""
+    """Voz nativa para Termux/Android sin dependencias pesadas."""
     if IS_TERMUX:
-        # Requiere: pkg install termux-api y la app Termux:API instalada
         os.system(f'termux-tts-speak "{texto}"')
     else:
-        print(f"Consola (Simulado): {texto}")
+        print(f"DEBUG (Voz): {texto}")
 
 async def main(page: ft.Page):
-    # Configuración de la página
-    page.title = "Agente 2026 - Servidor Local"
+    page.title = "Agente 2026 - Control Local"
     page.theme_mode = ft.ThemeMode.DARK
-    page.scroll = ft.ScrollMode.AUTO
+    page.window_width = 450
+    page.window_height = 800
     
-    # Paleta de colores premium (basada en tu diseño original)
-    page.theme = ft.Theme(
-        color_scheme=ft.ColorScheme(
-            primary="#10B981", # Verde esmeralda
-            secondary="#374151",
-            background="#1A1A1A",
-        )
-    )
+    # Colores premium basados en tu diseño original
+    page.theme = ft.Theme(color_scheme=ft.ColorScheme(primary="#10B981"))
 
-    # --- UI COMPONENTS ---
-    titulo = ft.Text("👽 SISTEMA IA 2026", size=24, weight="bold", color="#FBBF24")
-    resultado = ft.Text("Listo para recibir órdenes...", selectable=True, size=16)
-    loading = ft.ProgressBar(width=400, color="amber", visible=False)
-    
-    campo = ft.TextField(
-        label="Escribe aquí...", 
+    # UI Components
+    chat_display = ft.ListView(expand=True, spacing=10, initial_scroll_index=0)
+    user_input = ft.TextField(
+        hint_text="Comando o consulta...",
         expand=True,
-        border_color="#374151",
-        on_submit=lambda e: asyncio.create_task(ejecutar(e))
+        on_submit=lambda e: asyncio.create_task(procesar_comando(e))
     )
+    loading_bar = ft.ProgressBar(visible=False, color="amber")
 
-    # --- LÓGICA DE EJECUCIÓN ---
-    async def ejecutar(e):
-        if not campo.value:
-            return
-
-        loading.visible = True
-        campo.disabled = True
-        input_usuario = campo.value
+    async def procesar_comando(e):
+        if not user_input.value: return
+        
+        comando = user_input.value
+        user_input.value = ""
+        loading_bar.visible = True
+        
+        # Añadir mensaje del usuario al chat
+        chat_display.controls.append(
+            ft.Text(f"👤 Tú: {comando}", color="blue", weight="bold")
+        )
         page.update()
 
-        # Aquí es donde conectarías con tus archivos en CORE/ia.py
-        # Por ahora, una respuesta lógica simple:
-        if "/investigar" in input_usuario.lower():
-            respuesta = f"🔎 Iniciando protocolo de investigación sobre: {input_usuario.replace('/investigar', '').strip()}"
+        # --- INTEGRACIÓN CON CORE ---
+        # Aquí es donde el sistema interactúa con tus scripts en CORE/
+        await asyncio.sleep(1) # Simulación de proceso
+        
+        if "/investigar" in comando.lower():
+            respuesta = f"🔎 Iniciando protocolo de investigación en CORE/ia.py para: {comando}"
         else:
-            respuesta = f"🤖 Agente 2026 procesando: {input_usuario}"
+            respuesta = f"🤖 Agente 2026: Entendido. Ejecutando acción para '{comando}'."
 
-        resultado.value = respuesta
-        loading.visible = False
-        campo.disabled = False
-        campo.value = ""
+        # Mostrar respuesta y hablar
+        chat_display.controls.append(ft.Text(f"🤖 {respuesta}", color="green"))
+        loading_bar.visible = False
         page.update()
-
-        # Audio asíncrono (no bloquea la pantalla)
+        
         await hablar_async(respuesta)
 
-    # --- DISEÑO DE LA INTERFAZ ---
+    # Layout Principal
     page.add(
         ft.Container(
             content=ft.Column([
-                ft.Row([titulo], alignment="center"),
+                ft.Text("👽 SISTEMA IA 2026", size=28, weight="bold", color="#FBBF24"),
                 ft.Divider(color="#374151"),
-                ft.Container(
-                    content=resultado,
-                    padding=20,
-                    bgcolor="#111111",
-                    border_radius=15,
-                    min_height=150
-                ),
-                loading,
-                ft.Row([campo], alignment="center"),
+                ft.Container(content=chat_display, expand=True, padding=10),
+                loading_bar,
+                ft.Row([user_input, ft.IconButton(ft.icons.SEND_ROUNDED, on_click=lambda e: asyncio.create_task(procesar_comando(e)))]),
                 ft.Row([
-                    ft.ElevatedButton(
-                        "ENVIAR COMANDO", 
-                        icon=ft.icons.SEND,
-                        on_click=lambda e: asyncio.create_task(ejecutar(e)),
-                        style=ft.ButtonStyle(color="white", bgcolor="#10B981")
-                    )
-                ], alignment="center"),
-            ], spacing=20),
+                    ft.TextButton("Cámara", icon=ft.icons.CAMERA_ALT),
+                    ft.TextButton("Calendario", icon=ft.icons.CALENDAR_MONTH),
+                ], alignment="center")
+            ]),
+            expand=True,
             padding=20
         )
     )
 
-# --- PASO 3 CORREGIDO: Usamos ft.run en lugar de ft.app ---
+# Cambiado a ft.run para compatibilidad moderna y evitar DeprecationWarnings
 if __name__ == "__main__":
     ft.run(target=main, view=ft.AppView.WEB_BROWSER, port=8550)
