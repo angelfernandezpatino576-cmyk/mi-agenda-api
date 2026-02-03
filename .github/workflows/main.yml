@@ -21,7 +21,8 @@ jobs:
       - name: Instalar Flutter SDK
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.16.7' # Versión estable compatible con Flet
+          # Usamos una versión compatible para evitar la descarga automática de la 3.38.7
+          flutter-version: '3.16.7' 
 
       - name: Configurar Python
         uses: actions/setup-python@v4
@@ -32,12 +33,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install flet
-          # Instalamos dependencias evitando compilaciones pesadas si es posible
           if [ -f requirements.txt ]; then pip install --prefer-binary -r requirements.txt; fi
 
       - name: Crear APK
-        # CORRECCIÓN: Cambiamos el punto de entrada a 'main' porque eliminaste app.py
-        run: flet build apk --module-name=main 
+        # CORRECCIÓN: Apuntamos a main y usamos --yes para evitar errores de lectura
+        run: flet build apk --module-name=main --yes
 
       - name: Mover APK generado a dist/
         run: |
