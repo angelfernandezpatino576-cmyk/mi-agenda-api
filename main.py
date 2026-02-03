@@ -2,82 +2,64 @@ import flet as ft
 import os
 import asyncio
 
-# --- CONFIGURACIÓN DE ENTORNO ---
+# --- CONFIGURACIÓN PARA TERMUX/ANDROID ---
+# Detectamos si estamos en Termux para usar la voz del sistema
 IS_TERMUX = "com.termux" in os.environ.get("PREFIX", "")
 
 async def hablar_async(texto):
-    """Voz nativa para Termux/Android sin dependencias pesadas."""
+    """Lógica de voz optimizada para no bloquear el servidor"""
     if IS_TERMUX:
+        # Usa la API de Termux para hablar por la bocina del celular
         os.system(f'termux-tts-speak "{texto}"')
     else:
         print(f"DEBUG (Voz): {texto}")
 
 async def main(page: ft.Page):
-    page.title = "Agente 2026 - Control Local"
+    page.title = "Agente 2026 - Online"
     page.theme_mode = ft.ThemeMode.DARK
-    page.window_width = 450
-    page.window_height = 800
     
-    # Colores premium basados en tu diseño original
+    # Estilo visual premium inspirado en tu diseño original
     page.theme = ft.Theme(color_scheme=ft.ColorScheme(primary="#10B981"))
-
-    # UI Components
-    chat_display = ft.ListView(expand=True, spacing=10, initial_scroll_index=0)
-    user_input = ft.TextField(
-        hint_text="Comando o consulta...",
+    
+    chat_display = ft.ListView(expand=True, spacing=10)
+    input_field = ft.TextField(
+        label="Escribe tu comando...", 
         expand=True,
-        on_submit=lambda e: asyncio.create_task(procesar_comando(e))
+        on_submit=lambda e: asyncio.create_task(procesar_mensaje(e))
     )
-    loading_bar = ft.ProgressBar(visible=False, color="amber")
 
-    async def procesar_comando(e):
-        if not user_input.value: return
+    async def procesar_mensaje(e):
+        if not input_field.value: return
         
-        comando = user_input.value
-        user_input.value = ""
-        loading_bar.visible = True
-        
-        # Añadir mensaje del usuario al chat
-        chat_display.controls.append(
-            ft.Text(f"👤 Tú: {comando}", color="blue", weight="bold")
-        )
+        mensaje = input_field.value
+        chat_display.controls.append(ft.Text(f"👤 Tú: {mensaje}", color="blue", weight="bold"))
+        input_field.value = ""
         page.update()
 
-        # --- INTEGRACIÓN CON CORE ---
-        # Aquí es donde el sistema interactúa con tus scripts en CORE/
-        await asyncio.sleep(1) # Simulación de proceso
-        
-        if "/investigar" in comando.lower():
-            respuesta = f"🔎 Iniciando protocolo de investigación en CORE/ia.py para: {comando}"
-        else:
-            respuesta = f"🤖 Agente 2026: Entendido. Ejecutando acción para '{comando}'."
-
-        # Mostrar respuesta y hablar
-        chat_display.controls.append(ft.Text(f"🤖 {respuesta}", color="green"))
-        loading_bar.visible = False
+        # Simulación de respuesta conectada a tu CORE
+        respuesta = f"🤖 Agente 2026: Procesando '{mensaje}' desde el servidor local..."
+        chat_display.controls.append(ft.Text(respuesta, color="green"))
         page.update()
         
         await hablar_async(respuesta)
 
-    # Layout Principal
     page.add(
-        ft.Container(
-            content=ft.Column([
-                ft.Text("👽 SISTEMA IA 2026", size=28, weight="bold", color="#FBBF24"),
-                ft.Divider(color="#374151"),
-                ft.Container(content=chat_display, expand=True, padding=10),
-                loading_bar,
-                ft.Row([user_input, ft.IconButton(ft.icons.SEND_ROUNDED, on_click=lambda e: asyncio.create_task(procesar_comando(e)))]),
-                ft.Row([
-                    ft.TextButton("Cámara", icon=ft.icons.CAMERA_ALT),
-                    ft.TextButton("Calendario", icon=ft.icons.CALENDAR_MONTH),
-                ], alignment="center")
-            ]),
-            expand=True,
-            padding=20
-        )
+        ft.Text("👽 SISTEMA IA 2026", size=28, weight="bold", color="#FBBF24"),
+        ft.Divider(color="#374151"),
+        ft.Container(content=chat_display, expand=True, padding=10),
+        ft.Row([
+            input_field, 
+            ft.IconButton(ft.icons.SEND_ROUNDED, on_click=lambda e: asyncio.create_task(procesar_mensaje(e)))
+        ])
     )
 
-# Cambiado a ft.run para compatibilidad moderna y evitar DeprecationWarnings
+# --- CORRECCIÓN DEL ERROR EN MAIN.PY ---
 if __name__ == "__main__":
-    ft.run(target=main, view=ft.AppView.WEB_BROWSER, port=8550)
+    # Usamos ft.run para evitar el DeprecationWarning de la v0.80.4
+    # host="0.0.0.0" permite que entres desde tu PC u otro celular usando la IP
+    ft.run(
+        target=main, 
+        view=ft.AppView.WEB_BROWSER, 
+        host="0.0.0.0", 
+        port=8550
+    )
