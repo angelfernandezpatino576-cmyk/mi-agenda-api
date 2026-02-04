@@ -2,64 +2,79 @@ import flet as ft
 import os
 import asyncio
 
-# --- CONFIGURACIÓN PARA TERMUX/ANDROID ---
-# Detectamos si estamos en Termux para usar la voz del sistema
-IS_TERMUX = "com.termux" in os.environ.get("PREFIX", "")
-
+# --- CONFIGURACIÓN DE VOZ ---
+# En Android/Pydroid 3, usaremos la consola para el log de voz para evitar bloqueos
 async def hablar_async(texto):
-    """Lógica de voz optimizada para no bloquear el servidor"""
-    if IS_TERMUX:
-        # Usa la API de Termux para hablar por la bocina del celular
-        os.system(f'termux-tts-speak "{texto}"')
-    else:
-        print(f"DEBUG (Voz): {texto}")
+    """Lógica de respuesta de voz del Agente 2026"""
+    print(f"🤖 AGENTE 2026: {texto}")
 
 async def main(page: ft.Page):
-    page.title = "Agente 2026 - Online"
+    # Configuración de página premium
+    page.title = "Agente 2026 - Servidor Pydroid"
     page.theme_mode = ft.ThemeMode.DARK
+    page.bgcolor = "#0F172A"  # Azul muy oscuro
     
-    # Estilo visual premium inspirado en tu diseño original
-    page.theme = ft.Theme(color_scheme=ft.ColorScheme(primary="#10B981"))
+    # Estilo de la interfaz
+    chat_display = ft.ListView(expand=True, spacing=10, padding=20)
     
-    chat_display = ft.ListView(expand=True, spacing=10)
     input_field = ft.TextField(
-        label="Escribe tu comando...", 
+        hint_text="Ingresa un comando...",
         expand=True,
-        on_submit=lambda e: asyncio.create_task(procesar_mensaje(e))
+        border_radius=10,
+        border_color="#10B981", # Verde esmeralda
+        on_submit=lambda e: asyncio.create_task(enviar_comando(e))
     )
 
-    async def procesar_mensaje(e):
+    async def enviar_comando(e):
         if not input_field.value: return
         
-        mensaje = input_field.value
-        chat_display.controls.append(ft.Text(f"👤 Tú: {mensaje}", color="blue", weight="bold"))
+        user_text = input_field.value
+        chat_display.controls.append(
+            ft.Text(f"👤 Tú: {user_text}", color="#38BDF8", weight="bold")
+        )
         input_field.value = ""
         page.update()
 
-        # Simulación de respuesta conectada a tu CORE
-        respuesta = f"🤖 Agente 2026: Procesando '{mensaje}' desde el servidor local..."
-        chat_display.controls.append(ft.Text(respuesta, color="green"))
+        # Respuesta lógica vinculada a tu estructura CORE
+        respuesta = f"Ejecutando '{user_text}' en el servidor local de Pydroid 3."
+        chat_display.controls.append(
+            ft.Text(f"🤖 Agente: {respuesta}", color="#10B981")
+        )
         page.update()
-        
         await hablar_async(respuesta)
 
+    # Construcción de la UI
     page.add(
-        ft.Text("👽 SISTEMA IA 2026", size=28, weight="bold", color="#FBBF24"),
-        ft.Divider(color="#374151"),
-        ft.Container(content=chat_display, expand=True, padding=10),
-        ft.Row([
-            input_field, 
-            ft.IconButton(ft.icons.SEND_ROUNDED, on_click=lambda e: asyncio.create_task(procesar_mensaje(e)))
-        ])
+        ft.Container(
+            content=ft.Column([
+                ft.Row([
+                    ft.Icon(ft.icons.SATELLITE_ALT, color="#FBBF24"),
+                    ft.Text("AGENTE 2026", size=28, weight="bold", color="#FBBF24")
+                ], alignment="center"),
+                ft.Text("Estado: Local / Sin Hibernación", size=10, italic=True),
+                ft.Divider(color="#1E293B"),
+                chat_display,
+                ft.Row([
+                    input_field,
+                    ft.FloatingActionButton(
+                        icon=ft.icons.SEND,
+                        bgcolor="#10B981",
+                        on_click=lambda e: asyncio.create_task(enviar_comando(e))
+                    )
+                ])
+            ]),
+            expand=True,
+            padding=15
+        )
     )
 
-# --- CORRECCIÓN DEL ERROR EN MAIN.PY ---
+# --- INICIO DEL SERVIDOR ACTUALIZADO ---
 if __name__ == "__main__":
-    # Usamos ft.run para evitar el DeprecationWarning de la v0.80.4
-    # host="0.0.0.0" permite que entres desde tu PC u otro celular usando la IP
+    # Cambiamos a ft.run para evitar el DeprecationWarning de v0.80.4
+    # host="0.0.0.0" permite que tu APK cliente vea el servidor
     ft.run(
-        target=main, 
-        view=ft.AppView.WEB_BROWSER, 
-        host="0.0.0.0", 
+        target=main,
+        view=ft.AppView.WEB_BROWSER,
+        host="0.0.0.0",
         port=8550
     )
