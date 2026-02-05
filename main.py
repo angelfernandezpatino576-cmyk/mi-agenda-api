@@ -1,8 +1,25 @@
 import flet as ft
+import socket
 import asyncio
 
+def obtener_ip_local():
+    """Detecta la IP actual del teléfono automáticamente"""
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # No necesita conexión real, solo para identificar la interfaz activa
+        s.connect(('8.8.8.8', 80))
+        ip = s.getsockname()[0]
+    except Exception:
+        ip = '127.0.0.1'
+    finally:
+        s.close()
+    return ip
+
 async def main(page: ft.Page):
-    page.title = "Agente 2026 - Servidor Local"
+    ip_actual = obtener_ip_local()
+    
+    # Configuración de la interfaz premium
+    page.title = f"Agente 2026 - {ip_actual}"
     page.theme_mode = ft.ThemeMode.DARK
     page.bgcolor = "#0F172A"
     
@@ -15,26 +32,39 @@ async def main(page: ft.Page):
         input_txt.value = ""
         page.update()
         
-        # Simulación de respuesta
-        await asyncio.sleep(0.5)
-        chat.controls.append(ft.Text(f"🤖 Agente: Procesando en IP 192.168.101.2...", color="#10B981"))
+        # Respuesta lógica
+        await asyncio.sleep(0.3)
+        chat.controls.append(ft.Text(f"🤖 Agente: Procesando en red {ip_actual}", color="#10B981"))
         page.update()
 
-    input_txt = ft.TextField(hint_text="Comando...", expand=True, on_submit=enviar)
+    input_txt = ft.TextField(
+        hint_text="Escribe un comando...", 
+        expand=True, 
+        border_color="#10B981",
+        on_submit=enviar
+    )
 
     page.add(
         ft.Column([
-            ft.Text("👽 AGENTE 2026", size=28, weight="bold", color="#FBBF24"),
-            ft.Text("IP LOCAL: 192.168.101.2", size=10, italic=True, color="grey"),
+            ft.Container(
+                content=ft.Column([
+                    ft.Text("👽 SISTEMA IA 2026", size=28, weight="bold", color="#FBBF24"),
+                    ft.Text(f"📡 SERVIDOR ACTIVO EN: {ip_actual}:8550", size=12, color="#94A3B8", weight="bold"),
+                ]),
+                padding=10
+            ),
             ft.Divider(color="#1E293B"),
             chat,
-            ft.Row([input_txt, ft.IconButton(ft.icons.SEND, on_click=enviar)])
+            ft.Row([
+                input_txt, 
+                ft.IconButton(icon=ft.icons.SEND_ROUNDED, icon_color="#10B981", on_click=enviar)
+            ])
         ], expand=True)
     )
 
 if __name__ == "__main__":
-    # Usamos ft.run para evitar errores de versión
-    # host="0.0.0.0" permite que el APK vea el servidor en la IP 192.168.101.2
+    # ft.run elimina el error de 'ft.app is deprecated'
+    # host="0.0.0.0" hace que el servidor sea visible en toda tu red local
     ft.run(
         target=main,
         view=ft.AppView.WEB_BROWSER,
