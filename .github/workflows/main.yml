@@ -1,4 +1,4 @@
-name: Build APK Flet
+name: build
 
 on:
   push:
@@ -8,44 +8,26 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout código
+      - name: Checkout del código
         uses: actions/checkout@v3
-
-      - name: Instalar dependencias del sistema (Audio)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libasound2-dev portaudio19-dev
-
-      - name: Instalar Flutter SDK
-        uses: subosito/flutter-action@v2
-        with:
-          # Usamos una versión compatible para evitar la descarga automática de la 3.38.7
-          flutter-version: '3.16.7' 
 
       - name: Configurar Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      - name: Instalar dependencias de Python
+      - name: Instalar dependencias
         run: |
           python -m pip install --upgrade pip
           pip install flet
-          if [ -f requirements.txt ]; then pip install --prefer-binary -r requirements.txt; fi
 
       - name: Crear APK
-        # CORRECCIÓN: Apuntamos a main y usamos --yes para evitar errores de lectura
+        # El comando corregido para evitar el EOFError
         run: flet build apk --module-name=main --yes
 
-      - name: Mover APK generado a dist/
-        run: |
-          mkdir -p dist
-          find . -name "*.apk" -exec cp {} dist/ \;
-
-      - name: Subir APK como artefacto
-        uses: actions/upload-artifact@v4
+      - name: Subir APK generado
+        uses: actions/upload-artifact@v3
         with:
-          name: agente-2026-apk
-          path: dist/*.apk
+          name: Agente2026-APK
+          path: build/apk/*.apk
