@@ -1,12 +1,12 @@
 import flet as ft
 
-def mostrar_calendario(page):
-    def on_date_change(e):
-        page.snack_bar = ft.SnackBar(ft.Text(f"Fecha seleccionada: {e.control.value}"))
-        page.snack_bar.open = True
+def seleccionar_fecha(page: ft.Page, text_field):
+    def handle_change(e):
+        text_field.value = f"Evento para el: {e.control.value.strftime('%Y-%m-%d')}"
         page.update()
 
-    dp = ft.DatePicker(on_change=on_date_change)
-    page.overlay.append(dp)
-
-    return ft.IconButton(icon=ft.icons.CALENDAR_MONTH, on_click=lambda _: dp.pick_date())
+    date_picker = ft.DatePicker(
+        on_change=handle_change,
+    )
+    page.overlay.append(date_picker)
+    date_picker.pick_date()
