@@ -1,5 +1,4 @@
 flet==0.25.2
 groq==0.4.2
-tavily-python==0.3.0
 requests==2.31.0
 plyer==2.1.0
