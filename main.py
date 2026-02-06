@@ -1,55 +1,66 @@
 import flet as ft
-import socket
-import asyncio
+import os
+from groq import Groq
+from tavily import TavilyClient
 
-def obtener_ip_local():
-    """Detecta la IP de tu red actual (ej. 192.168.101.2)"""
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        s.connect(('8.8.8.8', 80))
-        ip = s.getsockname()[0]
-    except Exception:
-        ip = '127.0.0.1'
-    finally:
-        s.close()
-    return ip
+# Configuración de las llaves (Tokens)
+GROQ_KEY = "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"
+TAVILY_KEY = "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"
+
+# Inicialización de clientes
+client_ai = Groq(api_key=GROQ_KEY)
+tavily = TavilyClient(api_key=TAVILY_KEY)
 
 async def main(page: ft.Page):
-    ip_actual = obtener_ip_local()
-    page.title = "Agente 2026"
+    page.title = "Agente 2026 - Asistente Personal"
     page.theme_mode = ft.ThemeMode.DARK
     page.bgcolor = "#0F172A"
     
-    chat = ft.ListView(expand=True, spacing=10)
+    chat_display = ft.Column(expand=True, scroll=ft.ScrollMode.ALWAYS)
     
-    async def enviar(e):
-        if not txt.value: return
-        chat.controls.append(ft.Text(f"👤 Tú: {txt.value}", color="#38BDF8"))
-        txt.value = ""
-        page.update()
+    async def procesar_comando(e):
+        user_text = input_field.value
+        if not user_text: return
         
-        await asyncio.sleep(0.5)
-        chat.controls.append(ft.Text(f"🤖 Agente: Conectado en {ip_actual}", color="#10B981"))
+        # 1. Mostrar mensaje del usuario
+        chat_display.controls.append(ft.Text(f"Usted: {user_text}", color="#38BDF8"))
+        input_field.value = ""
         page.update()
 
-    txt = ft.TextField(hint_text="Escribe aquí...", expand=True, on_submit=enviar)
+        # 2. El Agente "Investiga" en internet usando Tavily
+        try:
+            search_result = tavily.search(query=user_text, max_results=2)
+            contexto = search_result['results']
+            
+            # 3. El Agente "Piensa" usando Groq
+            response = client_ai.chat.completions.create(
+                messages=[
+                    {"role": "system", "content": "Eres el Agente 2026, un asistente personal eficiente. Usa el contexto de búsqueda para responder de forma breve y clara."},
+                    {"role": "user", "content": f"Contexto: {contexto}\n\nPregunta: {user_text}"}
+                ],
+                model="llama3-8b-8192",
+            )
+            
+            respuesta_final = response.choices[0].message.content
+            chat_display.controls.append(ft.Text(f"Agente 2026: {respuesta_final}", color="#10B981"))
+        except Exception as err:
+            chat_display.controls.append(ft.Text(f"Error: {str(err)}", color="red"))
+        
+        page.update()
+
+    input_field = ft.TextField(hint_text="¿En qué puedo ayudarte?", expand=True)
+    send_button = ft.IconButton(icon=ft.icons.SEND_ROUNDED, on_click=procesar_comando)
 
     page.add(
-        ft.Column([
-            ft.Text("👽 AGENTE 2026", size=28, weight="bold", color="#FBBF24"),
-            ft.Text(f"📡 Servidor en: {ip_actual}:8550", size=12, color="grey"),
-            ft.Divider(),
-            chat,
-            ft.Row([txt, ft.IconButton(ft.icons.SEND, on_click=enviar)])
-        ], expand=True)
+        ft.Container(
+            content=ft.Text("👽 AGENTE 2026 - ONLINE", size=20, weight="bold", color="#38BDF8"),
+            padding=10
+        ),
+        ft.Container(content=chat_display, expand=True, bgcolor="#1E293B", padding=20, border_radius=15),
+        ft.Row([input_field, send_button])
     )
+    page.update()
 
 if __name__ == "__main__":
-    # SOLUCIÓN AL TYPEERROR: Usamos ft.app con target explícito
-    # host="0.0.0.0" permite que el APK vea el servidor en tu IP local
-    ft.app(
-        target=main, 
-        view=ft.AppView.WEB_BROWSER, 
-        host="0.0.0.0", 
-        port=8550
-    )
+    port = int(os.getenv("PORT", 8080))
+    ft.app(target=main, host="0.0.0.0", port=port)
