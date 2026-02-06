@@ -1,5 +1,5 @@
-flet
-requests
+flet==0.25.2
 groq
 tavily-python
-Pillow
+requests
+plyer
