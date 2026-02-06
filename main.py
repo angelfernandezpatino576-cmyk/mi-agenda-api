@@ -1,136 +1,147 @@
 import flet as ft
 import os
+import asyncio
 from groq import Groq
 from tavily import TavilyClient
 
 # ==========================================================
-# CONFIGURACIÓN DE CRUCIAL: TOKENS Y LLAVES
+# CONFIGURACIÓN DE NÚCLEO (CORE INTEGRATION)
 # ==========================================================
+# Estos tokens alimentan la lógica de los archivos en /CORE
 GROQ_KEY = "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"
 TAVILY_KEY = "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"
 
-# Inicialización de clientes de IA y Búsqueda
+# Inicialización de servicios globales
 client_ai = Groq(api_key=GROQ_KEY)
 tavily = TavilyClient(api_key=TAVILY_KEY)
 
 async def main(page: ft.Page):
-    # Configuración estética de la aplicación
-    page.title = "Agente 2026 - Asistente Personal"
+    # Configuración de la Interfaz del Asistente
+    page.title = "Agente 2026 - Central Pro"
     page.theme_mode = ft.ThemeMode.DARK
-    page.bgcolor = "#0F172A"  # Azul oscuro profesional
-    page.padding = 20
+    page.bgcolor = "#0F172A"
+    page.window_width = 450
+    page.window_height = 800
+    page.scroll = ft.ScrollMode.HIDDEN
     
-    # Contenedor de mensajes (el cuerpo del chat)
-    chat_display = ft.Column(expand=True, scroll=ft.ScrollMode.ALWAYS, spacing=10)
+    # Manejador de Permisos para hardware (Cámara y Micro en /CORE)
+    ph = ft.PermissionHandler()
+    page.overlay.append(ph)
 
-    # Función principal de procesamiento de comandos
-    async def procesar_comando(e):
-        user_text = input_field.value
-        if not user_text:
-            return
+    # Contenedor de mensajes
+    chat_display = ft.Column(expand=True, scroll=ft.ScrollMode.ALWAYS, spacing=15)
+
+    # --- FUNCIONES DE HARDWARE (Relacionadas con CORE/camara.py y CORE/microfono.py) ---
+    async def gestionar_hardware(tipo):
+        if tipo == "microfono":
+            status = await ph.request_permission(ft.PermissionType.MICROPHONE)
+        else:
+            status = await ph.request_permission(ft.PermissionType.CAMERA)
         
-        # 1. Mostrar mensaje del usuario en pantalla
+        color = "green" if status == ft.PermissionStatus.GRANTED else "red"
+        page.snack_bar = ft.SnackBar(ft.Text(f"Estado de {tipo}: {status}"), bgcolor=color)
+        page.snack_bar.open = True
+        page.update()
+
+    # --- MOTOR DE RESPUESTA (Relacionado con CORE/ia.py y CORE/calendario.py) ---
+    async def ejecutar_asistente(e):
+        user_input = input_field.value
+        if not user_input: return
+        
+        # UI: Registro de usuario
         chat_display.controls.append(
             ft.Container(
-                content=ft.Text(f"Tú: {user_text}", color="white"),
+                content=ft.Text(user_input, color="white"),
                 alignment=ft.alignment.center_right,
-                padding=10,
-                bgcolor="#1E293B",
-                border_radius=10
+                padding=12, bgcolor="#1E293B", border_radius=15
             )
         )
         input_field.value = ""
-        page.update()
-
-        # Indicador de "Pensando..."
-        thinking_text = ft.Text("Agente 2026 está investigando...", italic=True, color="#94A3B8")
-        chat_display.controls.append(thinking_text)
+        
+        # Animación de carga
+        loader = ft.Row([ft.ProgressRing(width=16, height=16, stroke_width=2), ft.Text(" Procesando...", size=12)], alignment="center")
+        chat_display.controls.append(loader)
         page.update()
 
         try:
-            # 2. BÚSQUEDA: El Agente usa Tavily para consultar internet
-            search_result = tavily.search(query=user_text, max_results=3, search_depth="advanced")
-            contexto = search_result['results']
+            # 1. Búsqueda en la web (Tavily)
+            busqueda = tavily.search(query=user_input, search_depth="advanced", max_results=2)
+            contexto_web = busqueda['results']
+
+            # 2. Inteligencia Artificial (Groq)
+            # Aquí se procesa si la orden es para el CALENDARIO o información general
+            prompt_sistema = (
+                "Eres el Agente 2026. Tienes acceso a los módulos en la carpeta CORE: "
+                "calendario, cámara, micrófono e IA. Si el usuario pide agendar algo, "
+                "confirma que usarás el módulo de calendario."
+            )
             
-            # 3. RAZONAMIENTO: El Agente usa Groq (Llama 3) para generar la respuesta
-            response = client_ai.chat.completions.create(
+            completion = client_ai.chat.completions.create(
                 messages=[
-                    {
-                        "role": "system", 
-                        "content": (
-                            "Eres el Agente 2026, un asistente personal avanzado. "
-                            "Tu objetivo es ser útil, preciso y breve. Usa el contexto de búsqueda "
-                            "proporcionado para dar respuestas actualizadas. Si es un recordatorio, "
-                            "confirma que lo has anotado."
-                        )
-                    },
-                    {"role": "user", "content": f"Contexto de internet: {contexto}\n\nPregunta del usuario: {user_text}"}
+                    {"role": "system", "content": prompt_sistema},
+                    {"role": "user", "content": f"Web Context: {contexto_web}\n\nOrden: {user_input}"}
                 ],
                 model="llama3-8b-8192",
             )
             
-            respuesta_final = response.choices[0].message.content
+            respuesta_agente = completion.choices[0].message.content
             
-            # 4. Mostrar respuesta del Agente
-            chat_display.controls.remove(thinking_text)
+            # UI: Respuesta del Agente
+            chat_display.controls.remove(loader)
             chat_display.controls.append(
                 ft.Container(
-                    content=ft.Text(f"Agente 2026: {respuesta_final}", color="white"),
+                    content=ft.Text(respuesta_agente, color="white"),
                     alignment=ft.alignment.center_left,
-                    padding=10,
-                    bgcolor="#38BDF8",
-                    border_radius=10
+                    padding=12, bgcolor="#38BDF8", border_radius=15
                 )
             )
-        except Exception as err:
-            chat_display.controls.remove(thinking_text)
-            chat_display.controls.append(ft.Text(f"Error de conexión: {str(err)}", color="red"))
+        except Exception as ex:
+            chat_display.controls.remove(loader)
+            chat_display.controls.append(ft.Text(f"Error en CORE: {str(ex)}", color="red", size=10))
         
         page.update()
 
-    # Componentes de entrada
+    # --- COMPONENTES VISUALES ---
     input_field = ft.TextField(
-        hint_text="Escribe un comando o pregunta...",
+        hint_text="Comando de voz o texto...",
         expand=True,
-        border_color="#38BDF8",
-        on_submit=procesar_comando
-    )
-    
-    send_button = ft.FloatingActionButton(
-        icon=ft.icons.SEND_ROUNDED,
-        on_click=procesar_comando,
-        bgcolor="#38BDF8"
+        border_radius=25,
+        bgcolor="#1E293B",
+        on_submit=ejecutar_asistente,
+        content_padding=15
     )
 
-    # Construcción de la interfaz
+    header = ft.Container(
+        content=ft.Row([
+            ft.Text("AGENTE 2026", weight="bold", size=22, color="#38BDF8"),
+            ft.Row([
+                ft.IconButton(ft.icons.MIC_NONE_ROUNDED, on_click=lambda _: gestionar_hardware("microfono")),
+                ft.IconButton(ft.icons.CAMERA_ALT_OUTLINED, on_click=lambda _: gestionar_hardware("camara")),
+            ])
+        ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+        padding=10
+    )
+
+    # --- ESTRUCTURA DE PÁGINA ---
     page.add(
-        ft.Row([
-            ft.Icon(ft.icons.SUPPORT_AGENT, color="#38BDF8", size=30),
-            ft.Text("AGENTE 2026 V1.0", size=22, weight="bold", color="#38BDF8"),
-            ft.Icon(ft.icons.CIRCLE, color="green", size=10), # Indicador para HetrixTools
-        ], alignment=ft.MainAxisAlignment.CENTER),
-        
-        ft.Divider(height=20, color="#1E293B"),
-        
+        header,
+        ft.Divider(color="#1E293B", height=1),
         ft.Container(
             content=chat_display,
             expand=True,
-            bgcolor="#0F172A",
-            padding=10,
+            padding=10
         ),
-        
-        ft.Row([input_field, send_button], vertical_alignment=ft.CrossAxisAlignment.CENTER)
+        ft.Container(
+            content=ft.Row([
+                input_field,
+                ft.FloatingActionButton(icon=ft.icons.SEND_ROUNDED, on_click=ejecutar_asistente, bgcolor="#38BDF8")
+            ]),
+            padding=10
+        )
     )
     page.update()
 
-# Ejecución del servidor compatible con Koyeb
+# --- INICIO DE SERVIDOR (KOYEB) ---
 if __name__ == "__main__":
-    # Koyeb inyecta el puerto en la variable de entorno 'PORT'
-    puerto_koyeb = int(os.getenv("PORT", 8080))
-    
-    ft.app(
-        target=main,
-        host="0.0.0.0",  # Necesario para acceso externo
-        port=puerto_koyeb,
-        view=None        # Modo servidor (sin ventana local)
-    )
+    puerto = int(os.getenv("PORT", 8080))
+    ft.app(target=main, host="0.0.0.0", port=puerto)
