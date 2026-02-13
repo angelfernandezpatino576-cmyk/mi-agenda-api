@@ -1,13 +1,8 @@
 import flet as ft
 
 def activar_escucha(page: ft.Page):
-    # En un servidor en la nube, usamos el SpeechToText del cliente
-    stt = ft.SpeechToText()
-    page.overlay.append(stt)
-    
-    def on_result(e):
-        print(f"Escuchado: {e.result}")
-    
-    stt.on_result = on_result
-    stt.start()
-    return "Escuchando..."
+    # Placeholder visual para la función de escucha
+    page.snack_bar = ft.SnackBar(ft.Text("Escuchando... (Hable ahora)"))
+    page.snack_bar.open = True
+    page.update()
+    return "Micro activo"
