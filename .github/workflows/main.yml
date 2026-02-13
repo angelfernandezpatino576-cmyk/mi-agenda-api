@@ -1,30 +1,37 @@
-name: build
+name: Build APK
+
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout código
-        uses: actions/checkout@v4 # Actualizado
+    - uses: actions/checkout@v4
 
-      - name: Configurar Python
-        uses: actions/setup-python@v5 # Actualizado
-        with:
-          python-version: '3.10'
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
 
-      - name: Instalar Flet
-        run: pip install flet
+    - name: Install Dependencies
+      run: |
+        pip install -r requirements.txt
+        pip install flet
 
-      - name: Crear APK
-        # --yes evita que el proceso se quede esperando confirmación
-        run: flet build apk --module-name main --yes
+    - name: Build APK
+      uses: flet-dev/flet-action@v0.1.3
+      with:
+        # Nota: Asegúrate de que main.py esté en la raíz
+        main-script: main.py 
+        # Si quieres un icono personalizado, descomenta y añade la ruta
+        # icon: assets/icon.png 
 
-      - name: Subir APK
-        # SOLUCIÓN AL ERROR DE GITHUB: Usamos v4
-        uses: actions/upload-artifact@v4 
-        with:
-          name: Agente2026-APK
-          path: build/apk/*.apk
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: Agente2026_APK
+        path: build/apk/*.apk
