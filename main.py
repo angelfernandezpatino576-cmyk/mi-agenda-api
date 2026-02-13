@@ -1,76 +1,56 @@
 import flet as ft
 import os
 
-# Importaciones protegidas del CORE
-try:
-    from CORE.ia import investigar
-    from CORE.camara import activar_camara
-    from CORE.calendario import mostrar_calendario
-    from CORE.microfono import activar_escucha
-except ImportError as e:
-    print(f"Error importando módulos: {e}")
+# Importaciones del CORE
+from CORE.ia import investigar
+from CORE.camara import activar_camara
+from CORE.calendario import mostrar_calendario
+from CORE.microfono import activar_escucha
 
 async def main(page: ft.Page):
-    # Configuración Visual
-    page.title = "Agente 2026"
+    page.title = "Agente 2026 Pro"
     page.theme_mode = ft.ThemeMode.DARK
     page.bgcolor = "#0F172A"
-    page.padding = 20
+    page.window_width = 400
     
-    # Manejador de Permisos
-    ph = ft.PermissionHandler()
-    page.overlay.append(ph)
-
-    # Área de Chat
     chat_display = ft.Column(expand=True, scroll=ft.ScrollMode.ALWAYS, spacing=10)
 
-    # Función Principal
-    async def procesar(e):
+    async def enviar_peticion(e):
         texto = input_field.value
         if not texto: return
         
-        # Mostrar mensaje usuario
+        # Mensaje de Usuario
         chat_display.controls.append(
-            ft.Container(content=ft.Text(f"Tú: {texto}"), alignment=ft.alignment.center_right, padding=10, bgcolor="#1E293B", border_radius=10)
+            ft.Container(content=ft.Text(texto), alignment=ft.alignment.center_right, bgcolor="#1E293B", padding=10, border_radius=10)
         )
         input_field.value = ""
-        
-        loader = ft.Text("Analizando...", italic=True, color="grey")
-        chat_display.controls.append(loader)
         page.update()
 
-        # Llamada a IA
-        try:
-            respuesta = investigar(texto)
-            chat_display.controls.remove(loader)
-            chat_display.controls.append(
-                ft.Container(content=ft.Text(f"Agente: {respuesta}"), alignment=ft.alignment.center_left, padding=10, bgcolor="#38BDF8", border_radius=10)
-            )
-        except Exception as ex:
-            chat_display.controls.remove(loader)
-            chat_display.controls.append(ft.Text(f"Error: {ex}", color="red"))
-        
+        # Respuesta de la IA
+        respuesta = investigar(texto)
+        chat_display.controls.append(
+            ft.Container(content=ft.Text(respuesta), alignment=ft.alignment.center_left, bgcolor="#38BDF8", padding=10, border_radius=10)
+        )
         page.update()
 
-    # Campo de Texto
-    input_field = ft.TextField(hint_text="Escribe aquí...", expand=True, on_submit=procesar, border_radius=20, bgcolor="#1E293B")
+    input_field = ft.TextField(hint_text="Escribe un comando...", expand=True, on_submit=enviar_peticion)
 
-    # Botones de Funciones (CORE)
-    botones = ft.Row([
-        ft.IconButton(ft.icons.MIC, on_click=lambda _: activar_escucha(page)),
-        ft.IconButton(ft.icons.CAMERA_ALT, on_click=lambda _: activar_camara(page)),
-        ft.IconButton(ft.icons.CALENDAR_MONTH, on_click=lambda _: mostrar_calendario(page, input_field)),
-    ], alignment=ft.MainAxisAlignment.CENTER)
+    # Cabecera con iconos vinculados a CORE
+    header = ft.Row([
+        ft.Text("AGENTE 2026", size=22, weight="bold", color="#38BDF8"),
+        ft.Row([
+            ft.IconButton(ft.icons.MIC, on_click=lambda _: activar_escucha(page)),
+            ft.IconButton(ft.icons.CAMERA_ALT, on_click=lambda _: activar_camara(page)),
+            ft.IconButton(ft.icons.CALENDAR_MONTH, on_click=lambda _: mostrar_calendario(page, input_field)),
+        ])
+    ], alignment="spaceBetween")
 
-    # Armado de la Página
     page.add(
-        ft.Container(content=ft.Text("AGENTE 2026", size=20, weight="bold", color="#38BDF8"), alignment=ft.alignment.center),
-        botones,
-        ft.Divider(color="grey"),
+        header,
+        ft.Divider(height=2, color="#1E293B"),
         ft.Container(content=chat_display, expand=True),
-        ft.Row([input_field, ft.FloatingActionButton(icon=ft.icons.SEND, on_click=procesar)])
+        ft.Row([input_field, ft.FloatingActionButton(icon=ft.icons.SEND, on_click=enviar_peticion, bgcolor="#38BDF8")])
     )
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 8080))
-    ft.app(target=main, host="0.0.0.0", port=port)
+    ft.app(target=main)
